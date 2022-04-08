@@ -35,7 +35,7 @@ out vec4 FragColor;                                                           \n
                                                                               \n\
 void main()                                                                   \n\
 {                                                                             \n\
-    FragColor = vec4(1.0, 0.0, 0.0, 1.0);                                     \n\
+    FragColor = vec4(0.0, 1.0, 0.0, 1.0);                                     \n\
 }";
 static void RenderSceneCB() {
 	//очищение окна (используя цвет, заданный выше)
@@ -44,15 +44,23 @@ static void RenderSceneCB() {
 	//угол
 	static float Scale = 0.0f;
 	Scale += 0.001f;
-	Matrix4f World;
-	World.m[0][0] = 1.0f; World.m[0][1] = 0.0f; World.m[0][2] = 0.0f; World.m[0][3] = sinf(Scale);
-	World.m[1][0] = 0.0f; World.m[1][1] = 1.0f; World.m[1][2] = 0.0f; World.m[1][3] = 0.0f;
-	World.m[2][0] = 0.0f; World.m[2][1] = 0.0f; World.m[2][2] = 1.0f; World.m[2][3] = 0.0f;
-	World.m[3][0] = 0.0f; World.m[3][1] = 0.0f; World.m[3][2] = 0.0f; World.m[3][3] = 1.0f;
+	glm::mat4x4 World;
+	//для вращения  треугольника
+
+	World[0][0] = cosf(Scale); World[0][1] = -sinf(Scale); World[0][2] = 0.0f; World[0][3] = 0.0f;
+	World[1][0] = sinf(Scale); World[1][1] = cosf(Scale);  World[1][2] = 0.0f; World[1][3] = 0.0f;
+	World[2][0] = 0.0f;        World[2][1] = 0.0f;         World[2][2] = 1.0f; World[2][3] = 0.0f;
+	World[3][0] = 0.0f;		   World[3][1] = 0.0f;         World[3][2] = 0.0f; World[3][3] = 1.0f;
+
+	////для перемещения треугольника
+	//World[0][0] = 1.0f; World[0][1] = 0.0f; World[0][2] = 0.0f; World[0][3] = sinf(Scale);
+	//World[1][0] = 0.0f; World[1][1] = 1.0f; World[1][2] = 0.0f; World[1][3] = 0.0f;
+	//World[2][0] = 0.0f; World[2][1] = 0.0f; World[2][2] = 1.0f; World[2][3] = 0.0f;
+	//World[3][0] = 0.0f; World[3][1] = 0.0f; World[3][2] = 0.0f; World[3][3] = 1.0f;
 
 	//Наш третий параметр в glUniformMatrix4fv() - это GL_TRUE, потому что мы поставляем матрицу упорядоченную по строкам.
 	//Четвертый параметр - это просто указатель на первый элемент матрицы.
-	glUniformMatrix4fv(gWorldLocation, 1, GL_TRUE, &World.m[0][0]);
+	glUniformMatrix4fv(gWorldLocation, 1, GL_TRUE, &World[0][0]);
 
 	// Разрешение использования каждого атрибута вершины (аттрибут вершины)
 	glEnableVertexAttribArray(0);
@@ -93,6 +101,8 @@ static void AddShader(GLuint ShaderProgram, const char* pShaderText, GLenum Shad
 	p[0] = pShaderText;
 	GLint Lengths[1];
 	Lengths[0] = strlen(pShaderText);
+	//Функция glShaderSource принимает тип шейдера как параметр
+	//Второй параметр - это размерность обоих массивов (в нашем случае это 1).
 	glShaderSource(ShaderObj, 1, p, Lengths);
 	glCompileShader(ShaderObj);
 
@@ -105,6 +115,7 @@ static void AddShader(GLuint ShaderProgram, const char* pShaderText, GLenum Shad
 		exit(1);
 	}
 
+	//мы присоединяем скомпилированный объект шейдера к объекту программы
 	glAttachShader(ShaderProgram, ShaderObj);
 }
 
@@ -126,6 +137,7 @@ static void CompileShaders()
 	GLint Success = 0;
 	GLchar ErrorLog[1024] = { 0 };
 
+	//После компиляции всех шейдеров и подсоединения их к программе мы наконец можем линковать их.
 	glLinkProgram(ShaderProgram);
 	glGetProgramiv(ShaderProgram, GL_LINK_STATUS, &Success);
 	if (Success == 0) {
@@ -143,6 +155,9 @@ static void CompileShaders()
 	}
 
 	glUseProgram(ShaderProgram);
+
+	gWorldLocation = glGetUniformLocation(ShaderProgram, "gWorld");
+	assert(gWorldLocation != 0xFFFFFFFF);
 }
 int main(int argc, char** argv)
 {
@@ -158,7 +173,8 @@ int main(int argc, char** argv)
 	glutCreateWindow("Tutorial 04");
 
 	glutDisplayFunc(RenderSceneCB);
-
+	//Здесь мы указываем функцию рендера в качестве ленивой.
+	glutIdleFunc(RenderSceneCB);
 	// Инициализируем glew
 	GLenum res = glewInit();
 	if (res != GLEW_OK) {
@@ -169,6 +185,8 @@ int main(int argc, char** argv)
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
 	CreateVertexBuffer();
+
+	CompileShaders();
 
 	glutMainLoop();
 
