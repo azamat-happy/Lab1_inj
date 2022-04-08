@@ -3,11 +3,6 @@
 #include <GL/freeglut.h>
 #include "glm/glm.hpp"
 
-
-struct Matrix4f {
-	float m[4][4];
-};
-
 // Хранит указатель на буфер вершин
 GLuint VBO;
 //Мы используем этот указатель для доступа к всемирной матрице,
@@ -23,19 +18,22 @@ static const char* pVS = "                                                    \n
 layout (location = 0) in vec3 Position;                                       \n\
                                                                               \n\
 uniform mat4 gWorld;														  \n\
+out vec4 Color;			 \n\
 	void main()                                                                   \n\
 {                                                                             \n\
    gl_Position = gWorld * vec4(Position, 1.0);							      \n\
+Color = vec4(clamp(Position, 0.0, 0.7), 1.0);                                   \n\
 }";
 
 static const char* pFS = "                                                    \n\
 #version 330                                                                  \n\
                                                                               \n\
+in vec4 Color;                                                                      \n\
 out vec4 FragColor;                                                           \n\
                                                                               \n\
 void main()                                                                   \n\
 {                                                                             \n\
-    FragColor = vec4(0.0, 1.0, 0.0, 1.0);                                     \n\
+    FragColor= Color;                                    \n\
 }";
 static void RenderSceneCB() {
 	//очищение окна (используя цвет, заданный выше)
@@ -43,30 +41,55 @@ static void RenderSceneCB() {
 
 	//угол
 	static float Scale = 0.0f;
-	Scale += 0.001f;
-	glm::mat4x4 World;
+	Scale += 0.0008f;
+	glm::mat4x4 World1;
+
+	/*для перемещения треугольника
+	World[0][0] = 1.0f; World[0][1] = 0.0f; World[0][2] = 0.0f; World[0][3] = sinf(Scale);
+	World[1][0] = 0.0f; World[1][1] = 1.0f; World[1][2] = 0.0f; World[1][3] = 0.0f;
+	World[2][0] = 0.0f; World[2][1] = 0.0f; World[2][2] = 1.0f; World[2][3] = 0.0f;
+	World[3][0] = 0.0f; World[3][1] = 0.0f; World[3][2] = 0.0f; World[3][3] = 1.0f;*/
 	//для вращения  треугольника
 
-	World[0][0] = cosf(Scale); World[0][1] = -sinf(Scale); World[0][2] = 0.0f; World[0][3] = 0.0f;
+	/*World[0][0] = cosf(Scale); World[0][1] = -sinf(Scale); World[0][2] = 0.0f; World[0][3] = 0.0f;
 	World[1][0] = sinf(Scale); World[1][1] = cosf(Scale);  World[1][2] = 0.0f; World[1][3] = 0.0f;
 	World[2][0] = 0.0f;        World[2][1] = 0.0f;         World[2][2] = 1.0f; World[2][3] = 0.0f;
-	World[3][0] = 0.0f;		   World[3][1] = 0.0f;         World[3][2] = 0.0f; World[3][3] = 1.0f;
-
-	////для перемещения треугольника
-	//World[0][0] = 1.0f; World[0][1] = 0.0f; World[0][2] = 0.0f; World[0][3] = sinf(Scale);
-	//World[1][0] = 0.0f; World[1][1] = 1.0f; World[1][2] = 0.0f; World[1][3] = 0.0f;
-	//World[2][0] = 0.0f; World[2][1] = 0.0f; World[2][2] = 1.0f; World[2][3] = 0.0f;
-	//World[3][0] = 0.0f; World[3][1] = 0.0f; World[3][2] = 0.0f; World[3][3] = 1.0f;
-
+	World[3][0] = 0.0f;		   World[3][1] = 0.0f;         World[3][2] = 0.0f; World[3][3] = 1.0f;*/
+	
+	//вращение вокруг x, другая вокруг y
+	// 
 	//преобразование масштаба
-    World[0][0]=sinf(Scale); World[0][1]=0.0f;        World[0][2]=0.0f;        World[0][3]=0.0f;
+   /* World[0][0]=sinf(Scale); World[0][1]=0.0f;        World[0][2]=0.0f;        World[0][3]=0.0f;
 	World[1][0] = 0.0f;        World[1][1] = cosf(Scale); World[1][2] = 0.0f;        World[1][3] = 0.0f;
 	World[2][0] = 0.0f;        World[2][1] = 0.0f;        World[2][2] = sinf(Scale); World[2][3] = 0.0f;
-	World[3][0] = 0.0f;        World[3][1] = 0.0f;        World[3][2] = 0.0f;        World[3][3] = 1.0f;
+	World[3][0] = 0.0f;        World[3][1] = 0.0f;        World[3][2] = 0.0f;        World[3][3] = 1.0f;*/
 
+	//Y
+	World1[0][0] = cosf(Scale); World1[0][1] = 0.0f;        World1[0][2] = -sinf(Scale);        World1[0][3] = 0.0f;
+	World1[1][0] = 0.0f;        World1[1][1] = 1.0f; World1[1][2] = 0.0f;        World1[1][3] = 0.0f;
+	World1[2][0] = sinf(Scale);        World1[2][1] = 0.0f;        World1[2][2] = cosf(Scale); World1[2][3] = 0.0f;
+	World1[3][0] = 0.0f;        World1[3][1] = 0.0f;        World1[3][2] = 0.0f;        World1[3][3] = 1.0f;
+
+	glm::mat4x4 World2;
+	//X
+	World2[0][0] = 1.0f; World2[0][1] = 0.0f;        World2[0][2] = 0.0f;       World2[0][3] = 0.0f;
+	World2[1][0] = 0.0f;        World2[1][1] = cosf(Scale);	      World2[1][2] = -sinf(Scale);				World2[1][3] = 0.0f;
+	World2[2][0] = 0.0f; World2[2][1] =sinf(Scale);        World2[2][2] = cosf(Scale);		World2[2][3] = 0.0f;
+	World2[3][0] = 0.0f;        World2[3][1] = 0.0f;        World2[3][2] = 0.0f;				World2[3][3] = 1.0f;
+
+	glm::mat4x4 World=World1*World2;
+
+	//для перемещения треугольника
+	glm::mat4x4 World3;
+	World3[0][0] = 1.0f; World3[0][1] = 0.0f; World3[0][2] = 0.0f; World3[0][3] = sinf(Scale);
+	World3[1][0] = 0.0f; World3[1][1] = 1.0f; World3[1][2] = 0.0f; World3[1][3] = 0.0f;
+	World3[2][0] = 0.0f; World3[2][1] = 0.0f; World3[2][2] = 1.0f; World3[2][3] = 0.0f;
+	World3[3][0] = 0.0f; World3[3][1] = 0.0f; World3[3][2] = 0.0f; World3[3][3] = 1.0f;
+	
+	glm::mat4x4 Worllll = World3 * World;
 	//Наш третий параметр в glUniformMatrix4fv() - это GL_TRUE, потому что мы поставляем матрицу упорядоченную по строкам.
 	//Четвертый параметр - это просто указатель на первый элемент матрицы.
-	glUniformMatrix4fv(gWorldLocation, 1, GL_TRUE, &World[0][0]);
+	glUniformMatrix4fv(gWorldLocation, 1, GL_TRUE, &Worllll[0][0]);
 
 	// Разрешение использования каждого атрибута вершины (аттрибут вершины)
 	glEnableVertexAttribArray(0);
