@@ -4,6 +4,9 @@
 #include "glm/glm.hpp"
 
 
+struct Matrix4f {
+    float m[4][4];
+};
 
 // Хранит указатель на буфер вершин
 GLuint VBO;
