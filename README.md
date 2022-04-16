@@ -288,8 +288,8 @@
 ##### В методе getTransformation добавляем в умножение матрицу перспективы:
     m_transformation = PersProjTrans * TranslationTrans * RotateTrans * ScaleTrans;
 ##### Также необходимо задать параметры окна
-// Задаём параметры окна
-#define WINDOW_WIDTH 1366
-#define WINDOW_HEIGHT 768
+	// Задаём параметры окна
+	#define WINDOW_WIDTH 1366
+	#define WINDOW_HEIGHT 768
 ##Вывод
 ##### Я научился перемещать, вращать, преобразовывать масштаб.
