@@ -67,6 +67,7 @@ static void RenderSceneCB() {
 	World[2][0] = 0.0f;        World[2][1] = 0.0f;        World[2][2] = sinf(Scale); World[2][3] = 0.0f;
 	World[3][0] = 0.0f;        World[3][1] = 0.0f;        World[3][2] = 0.0f;        World[3][3] = 1.0f;*/
 
+	//индивидуальное занятие
 	//Y
 	World1[0][0] = cosf(Scale); World1[0][1] = 0.0f;        World1[0][2] = -sinf(Scale);        World1[0][3] = 0.0f;
 	World1[1][0] = 0.0f;        World1[1][1] = 1.0f; World1[1][2] = 0.0f;        World1[1][3] = 0.0f;
@@ -92,6 +93,7 @@ static void RenderSceneCB() {
 	glm::mat4 Worllll = World3 * World;
 
 	//
+	//Преобразования
 	Pipeline p;
 	p.Scale(sinf(Scale * 0.1f), sinf(Scale * 0.1f), sinf(Scale * 0.1f));
 	p.WorldPos(sinf(Scale), 0.0f, 0.0f);
