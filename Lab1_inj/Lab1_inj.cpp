@@ -2,7 +2,10 @@
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 #include "glm/glm.hpp"
-
+#include "Pipeline.h"
+#include "Pipeline.h"
+#define ToRadian(x) ((x) * M_PI / 180.0f)
+#define ToDegree(x) ((x) * 180.0f / M_PI)
 // Хранит указатель на буфер вершин
 GLuint VBO;
 //Мы используем этот указатель для доступа к всемирной матрице,
@@ -10,8 +13,8 @@ GLuint VBO;
 //Всемирная она потому, что всё что мы делаем с объектом, это 
 //изменение его позиции в место, которое мы указываем относительно 
 //координатной системы внутри нашего виртуального 'мира'.
-GLuint gWorldLocation;
 
+GLuint gWorldLocation;
 static const char* pVS = "                                                    \n\
 #version 330                                                                  \n\
                                                                               \n\
@@ -42,10 +45,10 @@ static void RenderSceneCB() {
 	//угол
 	static float Scale = 0.0f;
 	Scale += 0.0008f;
-	glm::mat4x4 World1;
+	glm::mat4 World1;
 
-	/*для перемещения треугольника
-	World[0][0] = 1.0f; World[0][1] = 0.0f; World[0][2] = 0.0f; World[0][3] = sinf(Scale);
+	//для перемещения треугольника
+	/*World[0][0] = 1.0f; World[0][1] = 0.0f; World[0][2] = 0.0f; World[0][3] = sinf(Scale);
 	World[1][0] = 0.0f; World[1][1] = 1.0f; World[1][2] = 0.0f; World[1][3] = 0.0f;
 	World[2][0] = 0.0f; World[2][1] = 0.0f; World[2][2] = 1.0f; World[2][3] = 0.0f;
 	World[3][0] = 0.0f; World[3][1] = 0.0f; World[3][2] = 0.0f; World[3][3] = 1.0f;*/
@@ -70,26 +73,34 @@ static void RenderSceneCB() {
 	World1[2][0] = sinf(Scale);        World1[2][1] = 0.0f;        World1[2][2] = cosf(Scale); World1[2][3] = 0.0f;
 	World1[3][0] = 0.0f;        World1[3][1] = 0.0f;        World1[3][2] = 0.0f;        World1[3][3] = 1.0f;
 
-	glm::mat4x4 World2;
+	glm::mat4 World2;
 	//X
 	World2[0][0] = 1.0f; World2[0][1] = 0.0f;        World2[0][2] = 0.0f;       World2[0][3] = 0.0f;
 	World2[1][0] = 0.0f;        World2[1][1] = cosf(Scale);	      World2[1][2] = -sinf(Scale);				World2[1][3] = 0.0f;
 	World2[2][0] = 0.0f; World2[2][1] =sinf(Scale);        World2[2][2] = cosf(Scale);		World2[2][3] = 0.0f;
 	World2[3][0] = 0.0f;        World2[3][1] = 0.0f;        World2[3][2] = 0.0f;				World2[3][3] = 1.0f;
 
-	glm::mat4x4 World=World1*World2;
+	glm::mat4 World=World1*World2;
 
 	//для перемещения треугольника
-	glm::mat4x4 World3;
+	glm::mat4 World3;
 	World3[0][0] = 1.0f; World3[0][1] = 0.0f; World3[0][2] = 0.0f; World3[0][3] = sinf(Scale);
 	World3[1][0] = 0.0f; World3[1][1] = 1.0f; World3[1][2] = 0.0f; World3[1][3] = 0.0f;
 	World3[2][0] = 0.0f; World3[2][1] = 0.0f; World3[2][2] = 1.0f; World3[2][3] = 0.0f;
 	World3[3][0] = 0.0f; World3[3][1] = 0.0f; World3[3][2] = 0.0f; World3[3][3] = 1.0f;
 	
-	glm::mat4x4 Worllll = World3 * World;
+	glm::mat4 Worllll = World3 * World;
+
+	//
+	Pipeline p;
+	p.Scale(sinf(Scale * 0.1f), sinf(Scale * 0.1f), sinf(Scale * 0.1f));
+	p.WorldPos(sinf(Scale), 0.0f, 0.0f);
+	p.Rotate(sinf(Scale) * 90.0f, sinf(Scale) * 90.0f, sinf(Scale) * 90.0f);
+	glUniformMatrix4fv(gWorldLocation, 1, GL_TRUE, (const GLfloat*)p.getTransformation());
+	 
 	//Наш третий параметр в glUniformMatrix4fv() - это GL_TRUE, потому что мы поставляем матрицу упорядоченную по строкам.
 	//Четвертый параметр - это просто указатель на первый элемент матрицы.
-	glUniformMatrix4fv(gWorldLocation, 1, GL_TRUE, &Worllll[0][0]);
+	//glUniformMatrix4fv(gWorldLocation, 1, GL_TRUE, &Worllll[0][0]);
 
 	// Разрешение использования каждого атрибута вершины (аттрибут вершины)
 	glEnableVertexAttribArray(0);
