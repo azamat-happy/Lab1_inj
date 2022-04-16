@@ -4,6 +4,9 @@
 #include "glm/glm.hpp"
 #include "Pipeline.h"
 #include "Pipeline.h"
+// Задаём параметры окна
+#define WINDOW_WIDTH 1366
+#define WINDOW_HEIGHT 768
 #define ToRadian(x) ((x) * M_PI / 180.0f)
 #define ToDegree(x) ((x) * 180.0f / M_PI)
 // Хранит указатель на буфер вершин
@@ -68,38 +71,45 @@ static void RenderSceneCB() {
 	World[3][0] = 0.0f;        World[3][1] = 0.0f;        World[3][2] = 0.0f;        World[3][3] = 1.0f;*/
 
 	//индивидуальное занятие
-	//Y
-	World1[0][0] = cosf(Scale); World1[0][1] = 0.0f;        World1[0][2] = -sinf(Scale);        World1[0][3] = 0.0f;
-	World1[1][0] = 0.0f;        World1[1][1] = 1.0f; World1[1][2] = 0.0f;        World1[1][3] = 0.0f;
-	World1[2][0] = sinf(Scale);        World1[2][1] = 0.0f;        World1[2][2] = cosf(Scale); World1[2][3] = 0.0f;
-	World1[3][0] = 0.0f;        World1[3][1] = 0.0f;        World1[3][2] = 0.0f;        World1[3][3] = 1.0f;
+	////Y
+	//World1[0][0] = cosf(Scale); World1[0][1] = 0.0f;        World1[0][2] = -sinf(Scale);        World1[0][3] = 0.0f;
+	//World1[1][0] = 0.0f;        World1[1][1] = 1.0f; World1[1][2] = 0.0f;        World1[1][3] = 0.0f;
+	//World1[2][0] = sinf(Scale);        World1[2][1] = 0.0f;        World1[2][2] = cosf(Scale); World1[2][3] = 0.0f;
+	//World1[3][0] = 0.0f;        World1[3][1] = 0.0f;        World1[3][2] = 0.0f;        World1[3][3] = 1.0f;
 
-	glm::mat4 World2;
-	//X
-	World2[0][0] = 1.0f; World2[0][1] = 0.0f;        World2[0][2] = 0.0f;       World2[0][3] = 0.0f;
-	World2[1][0] = 0.0f;        World2[1][1] = cosf(Scale);	      World2[1][2] = -sinf(Scale);				World2[1][3] = 0.0f;
-	World2[2][0] = 0.0f; World2[2][1] =sinf(Scale);        World2[2][2] = cosf(Scale);		World2[2][3] = 0.0f;
-	World2[3][0] = 0.0f;        World2[3][1] = 0.0f;        World2[3][2] = 0.0f;				World2[3][3] = 1.0f;
+	//glm::mat4 World2;
+	////X
+	//World2[0][0] = 1.0f; World2[0][1] = 0.0f;        World2[0][2] = 0.0f;       World2[0][3] = 0.0f;
+	//World2[1][0] = 0.0f;        World2[1][1] = cosf(Scale);	      World2[1][2] = -sinf(Scale);				World2[1][3] = 0.0f;
+	//World2[2][0] = 0.0f; World2[2][1] =sinf(Scale);        World2[2][2] = cosf(Scale);		World2[2][3] = 0.0f;
+	//World2[3][0] = 0.0f;        World2[3][1] = 0.0f;        World2[3][2] = 0.0f;				World2[3][3] = 1.0f;
 
-	glm::mat4 World=World1*World2;
+	//glm::mat4 World=World1*World2;
 
-	//для перемещения треугольника
-	glm::mat4 World3;
-	World3[0][0] = 1.0f; World3[0][1] = 0.0f; World3[0][2] = 0.0f; World3[0][3] = sinf(Scale);
-	World3[1][0] = 0.0f; World3[1][1] = 1.0f; World3[1][2] = 0.0f; World3[1][3] = 0.0f;
-	World3[2][0] = 0.0f; World3[2][1] = 0.0f; World3[2][2] = 1.0f; World3[2][3] = 0.0f;
-	World3[3][0] = 0.0f; World3[3][1] = 0.0f; World3[3][2] = 0.0f; World3[3][3] = 1.0f;
-	
-	glm::mat4 Worllll = World3 * World;
+	////для перемещения треугольника
+	//glm::mat4 World3;
+	//World3[0][0] = 1.0f; World3[0][1] = 0.0f; World3[0][2] = 0.0f; World3[0][3] = sinf(Scale);
+	//World3[1][0] = 0.0f; World3[1][1] = 1.0f; World3[1][2] = 0.0f; World3[1][3] = 0.0f;
+	//World3[2][0] = 0.0f; World3[2][1] = 0.0f; World3[2][2] = 1.0f; World3[2][3] = 0.0f;
+	//World3[3][0] = 0.0f; World3[3][1] = 0.0f; World3[3][2] = 0.0f; World3[3][3] = 1.0f;
+	//
+	//glm::mat4 Worllll = World3 * World;
 
 	//
 	//Преобразования
+	// Создаём pipeline для трансформаций
 	Pipeline p;
-	p.Scale(sinf(Scale * 0.1f), sinf(Scale * 0.1f), sinf(Scale * 0.1f));
-	p.WorldPos(sinf(Scale), 0.0f, 0.0f);
-	p.Rotate(sinf(Scale) * 90.0f, sinf(Scale) * 90.0f, sinf(Scale) * 90.0f);
+	// Меняем масштаб
+	p.Scale(0.1f, 0.1f, 0.1f);
+	// Вращаем фигуру
+	p.Rotate(0, Scale, 0);
+	// Устанавливаем положение фигуры
+	p.WorldPos(0.0f, 0.0f, 100.0f);
+	// Задаём проекцию перспективы
+	p.SetPerspectiveProj(90.0f, WINDOW_WIDTH, WINDOW_HEIGHT, 10.0f, 10000.0f);
+	// Загружаем данные в uniform - переменные шейдера(адрес переменной, количество матриц,
+	// передаётся ли матрица по строкам, указатель на первый элемент матрицы)
 	glUniformMatrix4fv(gWorldLocation, 1, GL_TRUE, (const GLfloat*)p.getTransformation());
-	 
 	//Наш третий параметр в glUniformMatrix4fv() - это GL_TRUE, потому что мы поставляем матрицу упорядоченную по строкам.
 	//Четвертый параметр - это просто указатель на первый элемент матрицы.
 	//glUniformMatrix4fv(gWorldLocation, 1, GL_TRUE, &Worllll[0][0]);

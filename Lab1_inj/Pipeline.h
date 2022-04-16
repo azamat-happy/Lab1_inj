@@ -2,19 +2,39 @@
 #include "glm/glm.hpp"
 #define ToRadian(x) ((x) * M_PI / 180.0f)
 #define ToDegree(x) ((x) * 180.0f / M_PI)
+
 #define _USE_MATH_DEFINES
 #include <math.h> // число pi
 // класс для преобразований
 class Pipeline
 {
+private:
+
+    glm::vec3 m_scale;
+    glm::vec3 m_worldPos;
+    glm::vec3 m_rotateInfo;
+    glm::mat4 m_transformation;
+
+    struct {
+        float FOV;
+        float Width;
+        float Height;
+        float zNear;
+        float zFar;
+    } m_persProj;
 public:
-    Pipeline()
-    {
-        m_scale = glm::vec3(1.0f, 1.0f, 1.0f);
+    Pipeline():
+    
+        /*m_scale = glm::vec3(1.0f, 1.0f, 1.0f);
         m_worldPos = glm::vec3(0.0f, 0.0f, 0.0f);
-        m_rotateInfo = glm::vec3(0.0f, 0.0f, 0.0f);
+        m_rotateInfo = glm::vec3(0.0f, 0.0f, 0.0f);*/
+        m_scale(glm::vec3(1.0f, 1.0f, 1.0f)),
+            m_worldPos(glm::vec3(0.0f, 0.0f, 0.0f)),
+            m_rotateInfo(glm::vec3(0.0f, 0.0f, 0.0f)),
+            m_persProj(),
+            m_transformation(glm::mat4()) {}
         
-    }
+    
 
     //функции задания изменения масштаба
     void Scale(float ScaleX, float ScaleY, float ScaleZ)
@@ -42,17 +62,19 @@ public:
 
     const glm::mat4* getTransformation()
     {
-        glm::mat4 ScaleTrans, RotateTrans, TranslationTrans;
+        glm::mat4 ScaleTrans, RotateTrans, TranslationTrans, PersProjTrans;
+
         InitScaleTransform(ScaleTrans);
         InitRotateTransform(RotateTrans);
         InitTranslationTransform(TranslationTrans);
-        m_transformation = TranslationTrans * RotateTrans * ScaleTrans;
+        InitPerspectiveProj(PersProjTrans);
+        m_transformation = PersProjTrans * TranslationTrans * RotateTrans * ScaleTrans;
         return &m_transformation;
     }
     void InitScaleTransform(glm::mat4& m) const
     {
         m[0][0] = m_scale.x; m[0][1] = 0.0f; m[0][2] = 0.0f; m[0][3] = 0.0f;
-        m[1][0] = 0.0f; m[1][1] = m_scale.y; m[1][2] = 0.0f; m[1][3] = 0.0f;
+        m[1][0] = 0.0f;      m[1][1] = m_scale.y; m[1][2] = 0.0f; m[1][3] = 0.0f;
         m[2][0] = 0.0f; m[2][1] = 0.0f; m[2][2] = m_scale.z; m[2][3] = 0.0f;
         m[3][0] = 0.0f; m[3][1] = 0.0f; m[3][2] = 0.0f; m[3][3] = 1.0f;
     }
@@ -90,12 +112,43 @@ public:
         m[2][0] = 0.0f; m[2][1] = 0.0f;m[2][2] = 1.0f; m[2][3] = m_worldPos.z;
         m[3][0] = 0.0f; m[3][1] = 0.0f;m[3][2] = 0.0f; m[3][3] = 1.0f;
     }
+    void SetPerspectiveProj(float FOV, float Width, float Height, float zNear, float zFar)
+    {
+        m_persProj.FOV = FOV;
+        m_persProj.Width = Width;
+        m_persProj.Height = Height;
+        m_persProj.zNear = zNear;
+        m_persProj.zFar = zFar;
+    }
+    void InitPerspectiveProj(glm::mat4& m) const 
+    {
+        const float ar = m_persProj.Width / m_persProj.Height;
+        const float zNear = m_persProj.zNear;
+        const float zFar = m_persProj.zFar;
+        const float zRange = zNear - zFar;
+        const float tanHalfFOV = tanf(ToRadian(m_persProj.FOV / 2.0));
+
+        m[0][0] = 1.0f / (tanHalfFOV * ar);
+        m[0][1] = 0.0f;
+        m[0][2] = 0.0f;
+        m[0][3] = 0.0f;
+
+        m[1][0] = 0.0f;
+        m[1][1] = 1.0f / tanHalfFOV;
+        m[1][2] = 0.0f;
+        m[1][3] = 0.0f;
+
+        m[2][0] = 0.0f;
+        m[2][1] = 0.0f;
+        m[2][2] = (-zNear - zFar) / zRange;
+        m[2][3] = 2.0f * zFar * zNear / zRange;
+
+        m[3][0] = 0.0f;
+       m[3][1] = 0.0f;
+        m[3][2] = 1.0f;
+        m[3][3] = 0.0f; 
+    }
 
 
-private:
-   
-    glm::vec3 m_scale;
-    glm::vec3 m_worldPos;
-    glm::vec3 m_rotateInfo;
-    glm::mat4 m_transformation;
+
 };
