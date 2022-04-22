@@ -11,6 +11,7 @@
 #define ToDegree(x) ((x) * 180.0f / M_PI)
 // Хранит указатель на буфер вершин
 GLuint VBO;
+GLuint IBO;
 //Мы используем этот указатель для доступа к всемирной матрице,
 //представленной в виде uniform - переменной внутри шейдера.
 //Всемирная она потому, что всё что мы делаем с объектом, это 
@@ -100,13 +101,17 @@ static void RenderSceneCB() {
 	// Создаём pipeline для трансформаций
 	Pipeline p;
 	// Меняем масштаб
-	p.Scale(0.1f, 0.1f, 0.1f);
+	//p.Scale(0.1f, 0.1f, 0.1f);
 	// Вращаем фигуру
-	p.Rotate(0, Scale, 0);
+	p.Rotate(0.0f, Scale, 0.0f);
 	// Устанавливаем положение фигуры
-	p.WorldPos(0.0f, 0.0f, 100.0f);
+	p.WorldPos(0.0f, 0.0f, 3.0f);
+	glm::vec3 CameraPos(0.0f, 0.0f, -3.0f);
+	glm::vec3 CameraTarget(0.0f, 0.0f, 2.0f);
+	glm::vec3 CameraUp(0.0f, 1.0f, 0.0f);
+	p.SetCamera(CameraPos, CameraTarget, CameraUp);
 	// Задаём проекцию перспективы
-	p.SetPerspectiveProj(90.0f, WINDOW_WIDTH, WINDOW_HEIGHT, 10.0f, 10000.0f);
+	p.SetPerspectiveProj(60.0f, WINDOW_WIDTH, WINDOW_HEIGHT, 1.0f, 100.0f);
 	// Загружаем данные в uniform - переменные шейдера(адрес переменной, количество матриц,
 	// передаётся ли матрица по строкам, указатель на первый элемент матрицы)
 	glUniformMatrix4fv(gWorldLocation, 1, GL_TRUE, (const GLfloat*)p.getTransformation());
@@ -122,8 +127,10 @@ static void RenderSceneCB() {
 	// тип данных каждого компонента, нормализировать ли данные перед использованием, шаг - число байтов
 	// между двумя экземплярами атрибута, смещение первого компонента первого универсального атрибута вершины)
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
 	////вызвали функцию для отрисовки (режим рисования, индекс первого элемента в буфере, количество элементов)
-	glDrawArrays(GL_TRIANGLES, 0, 3);
+	  glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
+	//glDrawArrays(GL_TRIANGLES, 0, 3);
 	// Отключение каждого атрибута вершины
 	glDisableVertexAttribArray(0);
 	// Меняем фоновый буфер и буфер кадра местами
@@ -131,14 +138,26 @@ static void RenderSceneCB() {
 }
 static void CreateVertexBuffer()
 {
-	glm::vec3 Vertices[3];
-	Vertices[0] = glm::vec3(-1.0f, -1.0f, 0.0f);
-	Vertices[1] = glm::vec3(1.0f, -1.0f, 0.0f);
-	Vertices[2] = glm::vec3(0.0f, 1.0f, 0.0f);
+	glm::vec3 Vertices[4];
+	Vertices[0] = glm::vec3(-1.0f, -1.0f, 0.5773f);
+	Vertices[1] = glm::vec3(0.0f, -1.0f, -1.15475);
+	Vertices[2] = glm::vec3(1.0f, -1.0f, 0.5773f);
+	Vertices[3] = glm::vec3(0.0f, 1.0f, 0.0f);
 
 	glGenBuffers(1, &VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
+}
+static void CreateIndexBuffer()
+{
+	unsigned int Indices[] = { 0, 3, 1,
+							   1, 3, 2,
+							   2, 3, 0,
+							   0, 2, 1 };
+
+	glGenBuffers(1, &IBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Indices), Indices, GL_STATIC_DRAW);
 }
 static void AddShader(GLuint ShaderProgram, const char* pShaderText, GLenum ShaderType)
 {
@@ -170,7 +189,6 @@ static void AddShader(GLuint ShaderProgram, const char* pShaderText, GLenum Shad
 	//мы присоединяем скомпилированный объект шейдера к объекту программы
 	glAttachShader(ShaderProgram, ShaderObj);
 }
-
 static void CompileShaders()
 {
 	//Мы начинаем процесс разработки шейдеров через создание 

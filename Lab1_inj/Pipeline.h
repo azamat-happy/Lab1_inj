@@ -22,6 +22,12 @@ private:
         float zNear;
         float zFar;
     } m_persProj;
+
+    struct {
+        glm::vec3 Pos;
+        glm::vec3 Target;
+        glm::vec3 Up;
+    } m_camera;
 public:
     Pipeline():
     
@@ -62,15 +68,19 @@ public:
 
     const glm::mat4* getTransformation()
     {
-        glm::mat4 ScaleTrans, RotateTrans, TranslationTrans, PersProjTrans;
+        glm::mat4 ScaleTrans, RotateTrans, TranslationTrans, PersProjTrans, CameraTranslationTrans, CameraRotateTrans;
 
+       
         InitScaleTransform(ScaleTrans);
         InitRotateTransform(RotateTrans);
         InitTranslationTransform(TranslationTrans);
         InitPerspectiveProj(PersProjTrans);
-        m_transformation = PersProjTrans * TranslationTrans * RotateTrans * ScaleTrans;
+        InitTranslationTransform(CameraTranslationTrans);
+        InitCameraTransform(CameraRotateTrans);
+        m_transformation = PersProjTrans * CameraRotateTrans * CameraTranslationTrans * TranslationTrans * RotateTrans * ScaleTrans;
         return &m_transformation;
     }
+   
     void InitScaleTransform(glm::mat4& m) const
     {
         m[0][0] = m_scale.x; m[0][1] = 0.0f; m[0][2] = 0.0f; m[0][3] = 0.0f;
@@ -148,7 +158,50 @@ public:
         m[3][2] = 1.0f;
         m[3][3] = 0.0f; 
     }
+    void SetCamera(const glm::vec3& Pos, const glm::vec3& Target, const glm::vec3& Up)
+    {
+        m_camera.Pos = Pos;
+        m_camera.Target = Target;
+        m_camera.Up = Up;
+    }
+    void InitTranslationTransform(glm::mat4& m, float x, float y, float z)
+    {
+        m[0][0] = 1.0f; m[0][1] = 0.0f; m[0][2] = 0.0f; m[0][3] = x;
+        m[1][0] = 0.0f; m[1][1] = 1.0f; m[1][2] = 0.0f; m[1][3] = y;
+        m[2][0] = 0.0f; m[2][1] = 0.0f; m[2][2] = 1.0f; m[2][3] = z;
+        m[3][0] = 0.0f; m[3][1] = 0.0f; m[3][2] = 0.0f; m[3][3] = 1.0f;
+    }
 
+    glm::vec3 Cross(const glm::vec3& v) const
+    {
+        const float _x = y * v.z - z * v.y;
+        const float _y = z * v.x - x * v.z;
+        const float _z = x * v.y - y * v.x;
 
+        return glm::vec3(_x, _y, _z);
+    }
+    glm::vec3& Normalize()
+    {
+        const float Length = sqrtf(x * x + y * y + z * z);
 
+        x /= Length;
+        y /= Length;
+        z /= Length;
+
+        return (glm::vec3)this;
+    }
+    void InitCameraTransform(const glm::vec3& Target, const glm::vec3& Up)
+    {
+        glm::vec3 N = Target;
+        N.Normalize();
+        glm::vec3 U = Up;
+        U.Normalize();
+        U = U.Cross(N);
+        glm::vec3 V = N.Cross(U);
+
+        m[0][0] = U.x;   m[0][1] = U.y;   m[0][2] = U.z;   m[0][3] = 0.0f;
+        m[1][0] = V.x;   m[1][1] = V.y;   m[1][2] = V.z;   m[1][3] = 0.0f;
+        m[2][0] = N.x;   m[2][1] = N.y;   m[2][2] = N.z;   m[2][3] = 0.0f;
+        m[3][0] = 0.0f;  m[3][1] = 0.0f;  m[3][2] = 0.0f;  m[3][3] = 1.0f;
+    }
 };
