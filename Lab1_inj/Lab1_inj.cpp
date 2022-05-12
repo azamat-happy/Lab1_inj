@@ -18,95 +18,48 @@ GLuint VBO;
 //координатной системы внутри нашего виртуального 'мира'.
 
 GLuint gWorldLocation;
-static const char* pVS = "                                                    \n\
-#version 330                                                                  \n\
-                                                                              \n\
-layout (location = 0) in vec3 Position;                                       \n\
-                                                                              \n\
-uniform mat4 gWorld;														  \n\
-out vec4 Color;			 \n\
-	void main()                                                                   \n\
-{                                                                             \n\
-   gl_Position = gWorld * vec4(Position, 1.0);							      \n\
-Color = vec4(clamp(Position, 0.0, 0.7), 1.0);                                   \n\
+static const char* pVS = "                                                          \n\
+#version 330                                                                        \n\
+                                                                                    \n\
+layout (location = 0) in vec3 Position;                                             \n\
+                                                                                    \n\
+uniform mat4 gWorld;                                                                \n\
+                                                                                    \n\
+void main()                                                                         \n\
+{                                                                                   \n\
+    gl_Position = gWorld * vec4(Position, 1.0);                                     \n\
 }";
 
-static const char* pFS = "                                                    \n\
-#version 330                                                                  \n\
-                                                                              \n\
-in vec4 Color;                                                                      \n\
-out vec4 FragColor;                                                           \n\
-                                                                              \n\
-void main()                                                                   \n\
-{                                                                             \n\
-    FragColor= Color;                                    \n\
+static const char* pFS = "                                                          \n\
+#version 330                                                                        \n\
+                                                                                    \n\
+out vec4 FragColor;                                                                 \n\
+                                                                                    \n\
+void main()                                                                         \n\
+{                                                                                   \n\
+    FragColor = vec4(1.0, 1.0, 0.0, 1.0);                                           \n\
 }";
+
 static void RenderSceneCB() {
 	//очищение окна (используя цвет, заданный выше)
+	glClearColor(0.1f, 0.9f, 0.4f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	//угол
 	static float Scale = 0.0f;
-	Scale += 0.0008f;
+	Scale += 0.001f;
 	glm::mat4 World1;
 
-	//для перемещения треугольника
-	/*World[0][0] = 1.0f; World[0][1] = 0.0f; World[0][2] = 0.0f; World[0][3] = sinf(Scale);
-	World[1][0] = 0.0f; World[1][1] = 1.0f; World[1][2] = 0.0f; World[1][3] = 0.0f;
-	World[2][0] = 0.0f; World[2][1] = 0.0f; World[2][2] = 1.0f; World[2][3] = 0.0f;
-	World[3][0] = 0.0f; World[3][1] = 0.0f; World[3][2] = 0.0f; World[3][3] = 1.0f;*/
-	//для вращения  треугольника
-
-	/*World[0][0] = cosf(Scale); World[0][1] = -sinf(Scale); World[0][2] = 0.0f; World[0][3] = 0.0f;
-	World[1][0] = sinf(Scale); World[1][1] = cosf(Scale);  World[1][2] = 0.0f; World[1][3] = 0.0f;
-	World[2][0] = 0.0f;        World[2][1] = 0.0f;         World[2][2] = 1.0f; World[2][3] = 0.0f;
-	World[3][0] = 0.0f;		   World[3][1] = 0.0f;         World[3][2] = 0.0f; World[3][3] = 1.0f;*/
 	
-	//вращение вокруг x, другая вокруг y
-	// 
-	//преобразование масштаба
-   /* World[0][0]=sinf(Scale); World[0][1]=0.0f;        World[0][2]=0.0f;        World[0][3]=0.0f;
-	World[1][0] = 0.0f;        World[1][1] = cosf(Scale); World[1][2] = 0.0f;        World[1][3] = 0.0f;
-	World[2][0] = 0.0f;        World[2][1] = 0.0f;        World[2][2] = sinf(Scale); World[2][3] = 0.0f;
-	World[3][0] = 0.0f;        World[3][1] = 0.0f;        World[3][2] = 0.0f;        World[3][3] = 1.0f;*/
-
-	//индивидуальное занятие
-	////Y
-	//World1[0][0] = cosf(Scale); World1[0][1] = 0.0f;        World1[0][2] = -sinf(Scale);        World1[0][3] = 0.0f;
-	//World1[1][0] = 0.0f;        World1[1][1] = 1.0f; World1[1][2] = 0.0f;        World1[1][3] = 0.0f;
-	//World1[2][0] = sinf(Scale);        World1[2][1] = 0.0f;        World1[2][2] = cosf(Scale); World1[2][3] = 0.0f;
-	//World1[3][0] = 0.0f;        World1[3][1] = 0.0f;        World1[3][2] = 0.0f;        World1[3][3] = 1.0f;
-
-	//glm::mat4 World2;
-	////X
-	//World2[0][0] = 1.0f; World2[0][1] = 0.0f;        World2[0][2] = 0.0f;       World2[0][3] = 0.0f;
-	//World2[1][0] = 0.0f;        World2[1][1] = cosf(Scale);	      World2[1][2] = -sinf(Scale);				World2[1][3] = 0.0f;
-	//World2[2][0] = 0.0f; World2[2][1] =sinf(Scale);        World2[2][2] = cosf(Scale);		World2[2][3] = 0.0f;
-	//World2[3][0] = 0.0f;        World2[3][1] = 0.0f;        World2[3][2] = 0.0f;				World2[3][3] = 1.0f;
-
-	//glm::mat4 World=World1*World2;
-
-	////для перемещения треугольника
-	//glm::mat4 World3;
-	//World3[0][0] = 1.0f; World3[0][1] = 0.0f; World3[0][2] = 0.0f; World3[0][3] = sinf(Scale);
-	//World3[1][0] = 0.0f; World3[1][1] = 1.0f; World3[1][2] = 0.0f; World3[1][3] = 0.0f;
-	//World3[2][0] = 0.0f; World3[2][1] = 0.0f; World3[2][2] = 1.0f; World3[2][3] = 0.0f;
-	//World3[3][0] = 0.0f; World3[3][1] = 0.0f; World3[3][2] = 0.0f; World3[3][3] = 1.0f;
-	//
-	//glm::mat4 Worllll = World3 * World;
-
-	//
 	//Преобразования
 	// Создаём pipeline для трансформаций
 	Pipeline p;
-	// Меняем масштаб
-	p.Scale(0.1f, 0.1f, 0.1f);
-	// Вращаем фигуру
-	p.Rotate(0, Scale, 0);
-	// Устанавливаем положение фигуры
-	p.WorldPos(0.0f, 0.0f, 100.0f);
-	// Задаём проекцию перспективы
-	p.SetPerspectiveProj(90.0f, WINDOW_WIDTH, WINDOW_HEIGHT, 10.0f, 10000.0f);
+
+	p.Scale(cos(Scale * 0.5), sinf(Scale * 0.5), 0.0f);
+	p.WorldPos(sinf(Scale) / 2, cosf(Scale) / 2, 0.0f);
+	p.Rotate(1.0f, 1.0f, 1.0f);
+
+	p.PerspectiveProj(100.0f, WINDOW_WIDTH, WINDOW_HEIGHT, 1.0f, 200.0f);
 	// Загружаем данные в uniform - переменные шейдера(адрес переменной, количество матриц,
 	// передаётся ли матрица по строкам, указатель на первый элемент матрицы)
 	glUniformMatrix4fv(gWorldLocation, 1, GL_TRUE, (const GLfloat*)p.getTransformation());
