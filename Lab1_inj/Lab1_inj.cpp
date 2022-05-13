@@ -3,213 +3,103 @@
 #include <assert.h>
 #include <GL/glew.h>
 #include <GL/freeglut.h>
-#include "glm/vec3.hpp"
-#include "glm/mat4x4.hpp"
-#include "pipeline.h"
-#include "camera.h"
-// Задаём параметры окна
-#define WINDOW_WIDTH 1024
-#define WINDOW_HEIGHT 768
-
-#define ToRadian(x) ((x) * M_PI / 180.0f)
-#define ToDegree(x) ((x) * 180.0f / M_PI)
-// Хранит указатель на буфер вершин
-GLuint VBO;
-GLuint IBO;
-GLuint gWVPLocation;
-
-Camera GameCamera;
-//Мы используем этот указатель для доступа к всемирной матрице,
-//представленной в виде uniform - переменной внутри шейдера.
-//Всемирная она потому, что всё что мы делаем с объектом, это 
-//изменение его позиции в место, которое мы указываем относительно 
-//координатной системы внутри нашего виртуального 'мира'.
-
-GLuint gWorldLocation;
-static const char* pVS = "                                                          \n\
-#version 330                                                                        \n\
-                                                                                    \n\
-layout (location = 0) in vec3 Position;                                             \n\
-                                                                                    \n\
-uniform mat4 gWorld;                                                                \n\
-                                                                                    \n\
-void main()                                                                         \n\
-{                                                                                   \n\
-    gl_Position = gWorld * vec4(Position, 1.0);                                     \n\
-}";
-
-static const char* pFS = "                                                          \n\
-#version 330                                                                        \n\
-                                                                                    \n\
-out vec4 FragColor;                                                                 \n\
-                                                                                    \n\
-void main()                                                                         \n\
-{                                                                                   \n\
-    FragColor = vec4(1.0, 1.0, 0.0, 1.0);                                           \n\
-}";
-
-static void RenderSceneCB() {
-	//очищение окна (используя цвет, заданный выше)
-	glClearColor(0.1f, 0.9f, 0.4f, 0.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
-	//угол
-	static float Scale = 0.0f;
-	Scale += 0.001f;
-	glm::mat4 World1;
+#include <stdlib.h>
+#include <Gl/glew.h>
 
 
-	//Преобразования
+// инициализация переменных цвета в 1.0
+// треугольник - белый
+float red = 1.0f, blue = 1.0f, green = 1.0f;
 
+// угол поворота
+float angle = 0.0f;
 
-	Pipeline p;
+void changeSize(int w, int h) {
+	// предотвращение деления на ноль
+	if (h == 0)
+		h = 1;
+	float ratio = w * 1.0 / h;
+	// используем матрицу проекции
+	glMatrixMode(GL_PROJECTION);
+	// обнуляем матрицу
+	glLoadIdentity();
+	// установить параметры вьюпорта
+	glViewport(0, 0, w, h);
+	// установить корректную перспективу
+	gluPerspective(45.0f, ratio, 0.1f, 100.0f);
+	// вернуться к матрице проекции
+	glMatrixMode(GL_MODELVIEW);
+}
 
-	p.Scale(cos(Scale * 0.5), sinf(Scale * 0.5), 0.0f);
-	p.WorldPos(sinf(Scale) / 2, cosf(Scale) / 2, 0.0f);
-	p.Rotate(1.0f, 1.0f, 1.0f);
-	p.SetCamera(GameCamera.GetPos(), GameCamera.GetTarget(), GameCamera.GetUp());
-	p.PerspectiveProj(100.0f, WINDOW_WIDTH, WINDOW_HEIGHT, 1.0f, 200.0f);
-	// Загружаем данные в uniform - переменные шейдера(адрес переменной, количество матриц,
-	// передаётся ли матрица по строкам, указатель на первый элемент матрицы)
-	glUniformMatrix4fv(gWorldLocation, 1, GL_TRUE, (const GLfloat*)p.getTransformation());
-	//Наш третий параметр в glUniformMatrix4fv() - это GL_TRUE, потому что мы поставляем матрицу упорядоченную по строкам.
-	//Четвертый параметр - это просто указатель на первый элемент матрицы.
-	//glUniformMatrix4fv(gWorldLocation, 1, GL_TRUE, &Worllll[0][0]);
+void renderScene(void) {
 
-	// Разрешение использования каждого атрибута вершины (аттрибут вершины)
-	glEnableVertexAttribArray(0);
-	// Обратно привязываем буфер, приготавливая для отрисовки
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	//Этот вызов говорит конвейеру как воспринимать данные внутри буфера(индекс атрибута, количество аттрибутов,
-	// тип данных каждого компонента, нормализировать ли данные перед использованием, шаг - число байтов
-	// между двумя экземплярами атрибута, смещение первого компонента первого универсального атрибута вершины)
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	////вызвали функцию для отрисовки (режим рисования, индекс первого элемента в буфере, количество элементов)
-	glDrawArrays(GL_TRIANGLES, 0, 3);
-	// Отключение каждого атрибута вершины
-	glDisableVertexAttribArray(0);
-	// Меняем фоновый буфер и буфер кадра местами
+	// очистить буфер цвета и глубины.
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	// обнулить трансформацию
+	glLoadIdentity();
+	// установить камеру
+	gluLookAt(0.0f, 0.0f, 10.0f,
+		0.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 0.0f);
+	//поворот на заданную величину
+	glRotatef(angle, 0.0f, 1.0f, 0.0f);
+	// установить цвет модели
+	glColor3f(red, green, blue);
+	glBegin(GL_TRIANGLES);
+	glVertex3f(-2.0f, -2.0f, 0.0f);
+	glVertex3f(0.0f, 2.0f, 0.0);
+	glVertex3f(2.0f, -2.0f, 0.0);
+	glEnd();
+
+	angle += 0.1f;
+
 	glutSwapBuffers();
 }
-static void SpecialKeyboardCB(int Key, int x, int y)
-{
-	GameCamera.OnKeyboard(Key);
-}
 
-static void CreateVertexBuffer()
-{
-	glm::vec3 Vertices[3];
-	Vertices[0] = glm::vec3(-1.0f, -1.0f, 0.0f);
-	Vertices[1] = glm::vec3(1.0f, -1.0f, 0.0f);
-	Vertices[2] = glm::vec3(0.0f, 1.0f, 0.0f);
+void processNormalKeys(unsigned char key, int x, int y) {
 
-	glGenBuffers(1, &VBO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
-}
-static void AddShader(GLuint ShaderProgram, const char* pShaderText, GLenum ShaderType)
-{
-	GLuint ShaderObj = glCreateShader(ShaderType);
-
-	if (ShaderObj == 0) {
-		fprintf(stderr, "Error creating shader type %d\n", ShaderType);
+	if (key == 27)
 		exit(0);
-	}
-
-	const GLchar* p[1];
-	p[0] = pShaderText;
-	GLint Lengths[1];
-	Lengths[0] = strlen(pShaderText);
-	//Функция glShaderSource принимает тип шейдера как параметр
-	//Второй параметр - это размерность обоих массивов (в нашем случае это 1).
-	glShaderSource(ShaderObj, 1, p, Lengths);
-	glCompileShader(ShaderObj);
-
-	GLint success;
-	glGetShaderiv(ShaderObj, GL_COMPILE_STATUS, &success);
-	if (!success) {
-		GLchar InfoLog[1024];
-		glGetShaderInfoLog(ShaderObj, 1024, NULL, InfoLog);
-		fprintf(stderr, "Error compiling shader type %d: '%s'\n", ShaderType, InfoLog);
-		exit(1);
-	}
-
-	//мы присоединяем скомпилированный объект шейдера к объекту программы
-	glAttachShader(ShaderProgram, ShaderObj);
 }
 
-static void CompileShaders()
-{
-	//Мы начинаем процесс разработки шейдеров через создание 
-	/*программного объекта.
-	Позже мы слинкуем все шейдеры в этот объект.*/
-	GLuint ShaderProgram = glCreateProgram();
+void processSpecialKeys(int key, int x, int y) {
 
-	if (ShaderProgram == 0) {
-		fprintf(stderr, "Error creating shader program\n");
-		exit(1);
+	switch (key) {
+	case GLUT_KEY_F1:
+		red = 1.0;
+		green = 0.0;
+		blue = 0.0; break;
+	case GLUT_KEY_F2:
+		red = 0.0;
+		green = 1.0;
+		blue = 0.0; break;
+	case GLUT_KEY_F3:
+		red = 0.0;
+		green = 0.0;
+		blue = 1.0; break;
 	}
-
-	AddShader(ShaderProgram, pVS, GL_VERTEX_SHADER);
-	AddShader(ShaderProgram, pFS, GL_FRAGMENT_SHADER);
-
-	GLint Success = 0;
-	GLchar ErrorLog[1024] = { 0 };
-
-	//После компиляции всех шейдеров и подсоединения их к программе мы наконец можем линковать их.
-	glLinkProgram(ShaderProgram);
-	glGetProgramiv(ShaderProgram, GL_LINK_STATUS, &Success);
-	if (Success == 0) {
-		glGetProgramInfoLog(ShaderProgram, sizeof(ErrorLog), NULL, ErrorLog);
-		fprintf(stderr, "Error linking shader program: '%s'\n", ErrorLog);
-		exit(1);
-	}
-
-	glValidateProgram(ShaderProgram);
-	glGetProgramiv(ShaderProgram, GL_VALIDATE_STATUS, &Success);
-	if (!Success) {
-		glGetProgramInfoLog(ShaderProgram, sizeof(ErrorLog), NULL, ErrorLog);
-		fprintf(stderr, "Invalid shader program: '%s'\n", ErrorLog);
-		exit(1);
-	}
-
-	glUseProgram(ShaderProgram);
-
-	gWorldLocation = glGetUniformLocation(ShaderProgram, "gWorld");
-	assert(gWorldLocation != 0xFFFFFFFF);
 }
-int main(int argc, char** argv)
-{
-	// Инициализация glut
+
+int main(int argc, char** argv) {
+
+	// инициализация
 	glutInit(&argc, argv);
-	//двойная буферизация и буфер цвета
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
-	//задание размера окна (ширина, высота)
-	glutInitWindowSize(1024, 768);
-	//задание положения позиции окна (x и y относительно левого верхнего угла)
+	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
 	glutInitWindowPosition(100, 100);
-	//создание окна приложения с названием "Tutorial 01"
-	glutCreateWindow("Tutorial 04");
+	glutInitWindowSize(400, 400);
+	glutCreateWindow("Урок 4");
 
-	glutDisplayFunc(RenderSceneCB);
-	//Здесь мы указываем функцию рендера в качестве ленивой.
-	glutIdleFunc(RenderSceneCB);
+	// регистрация
+	glutDisplayFunc(renderScene);
+	glutReshapeFunc(changeSize);
+	glutIdleFunc(renderScene);
 
-	glutSpecialFunc(SpecialKeyboardCB);
+	// наши новые функции
+	glutKeyboardFunc(processNormalKeys);
+	glutSpecialFunc(processSpecialKeys);
 
-	// Инициализируем glew
-	GLenum res = glewInit();
-	if (res != GLEW_OK) {
-		fprintf(stderr, "Error: '%s'\n", glewGetErrorString(res));
-		return 1;
-	}
-
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-
-	CreateVertexBuffer();
-
-	CompileShaders();
-
+	// основной цикл
 	glutMainLoop();
 
-	return 0;
+	return 1;
 }
