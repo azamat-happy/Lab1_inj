@@ -11,7 +11,6 @@
 #define ToDegree(x) ((x) * 180.0f / M_PI)
 // Хранит указатель на буфер вершин
 GLuint VBO;
-GLuint IBO;
 //Мы используем этот указатель для доступа к всемирной матрице,
 //представленной в виде uniform - переменной внутри шейдера.
 //Всемирная она потому, что всё что мы делаем с объектом, это 
@@ -19,99 +18,48 @@ GLuint IBO;
 //координатной системы внутри нашего виртуального 'мира'.
 
 GLuint gWorldLocation;
-static const char* pVS = "                                                    \n\
-#version 330                                                                  \n\
-                                                                              \n\
-layout (location = 0) in vec3 Position;                                       \n\
-                                                                              \n\
-uniform mat4 gWorld;														  \n\
-out vec4 Color;			 \n\
-	void main()                                                                   \n\
-{                                                                             \n\
-   gl_Position = gWorld * vec4(Position, 1.0);							      \n\
-Color = vec4(clamp(Position, 0.0, 0.7), 1.0);                                   \n\
+static const char* pVS = "                                                          \n\
+#version 330                                                                        \n\
+                                                                                    \n\
+layout (location = 0) in vec3 Position;                                             \n\
+                                                                                    \n\
+uniform mat4 gWorld;                                                                \n\
+                                                                                    \n\
+void main()                                                                         \n\
+{                                                                                   \n\
+    gl_Position = gWorld * vec4(Position, 1.0);                                     \n\
 }";
 
-static const char* pFS = "                                                    \n\
-#version 330                                                                  \n\
-                                                                              \n\
-in vec4 Color;                                                                      \n\
-out vec4 FragColor;                                                           \n\
-                                                                              \n\
-void main()                                                                   \n\
-{                                                                             \n\
-    FragColor= Color;                                    \n\
+static const char* pFS = "                                                          \n\
+#version 330                                                                        \n\
+                                                                                    \n\
+out vec4 FragColor;                                                                 \n\
+                                                                                    \n\
+void main()                                                                         \n\
+{                                                                                   \n\
+    FragColor = vec4(1.0, 1.0, 0.0, 1.0);                                           \n\
 }";
+
 static void RenderSceneCB() {
 	//очищение окна (используя цвет, заданный выше)
+	glClearColor(0.1f, 0.9f, 0.4f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	//угол
 	static float Scale = 0.0f;
-	Scale += 0.0008f;
+	Scale += 0.001f;
 	glm::mat4 World1;
 
-	//для перемещения треугольника
-	/*World[0][0] = 1.0f; World[0][1] = 0.0f; World[0][2] = 0.0f; World[0][3] = sinf(Scale);
-	World[1][0] = 0.0f; World[1][1] = 1.0f; World[1][2] = 0.0f; World[1][3] = 0.0f;
-	World[2][0] = 0.0f; World[2][1] = 0.0f; World[2][2] = 1.0f; World[2][3] = 0.0f;
-	World[3][0] = 0.0f; World[3][1] = 0.0f; World[3][2] = 0.0f; World[3][3] = 1.0f;*/
-	//для вращения  треугольника
 
-	/*World[0][0] = cosf(Scale); World[0][1] = -sinf(Scale); World[0][2] = 0.0f; World[0][3] = 0.0f;
-	World[1][0] = sinf(Scale); World[1][1] = cosf(Scale);  World[1][2] = 0.0f; World[1][3] = 0.0f;
-	World[2][0] = 0.0f;        World[2][1] = 0.0f;         World[2][2] = 1.0f; World[2][3] = 0.0f;
-	World[3][0] = 0.0f;		   World[3][1] = 0.0f;         World[3][2] = 0.0f; World[3][3] = 1.0f;*/
-	
-	//вращение вокруг x, другая вокруг y
-	// 
-	//преобразование масштаба
-   /* World[0][0]=sinf(Scale); World[0][1]=0.0f;        World[0][2]=0.0f;        World[0][3]=0.0f;
-	World[1][0] = 0.0f;        World[1][1] = cosf(Scale); World[1][2] = 0.0f;        World[1][3] = 0.0f;
-	World[2][0] = 0.0f;        World[2][1] = 0.0f;        World[2][2] = sinf(Scale); World[2][3] = 0.0f;
-	World[3][0] = 0.0f;        World[3][1] = 0.0f;        World[3][2] = 0.0f;        World[3][3] = 1.0f;*/
-
-	//индивидуальное занятие
-	////Y
-	//World1[0][0] = cosf(Scale); World1[0][1] = 0.0f;        World1[0][2] = -sinf(Scale);        World1[0][3] = 0.0f;
-	//World1[1][0] = 0.0f;        World1[1][1] = 1.0f; World1[1][2] = 0.0f;        World1[1][3] = 0.0f;
-	//World1[2][0] = sinf(Scale);        World1[2][1] = 0.0f;        World1[2][2] = cosf(Scale); World1[2][3] = 0.0f;
-	//World1[3][0] = 0.0f;        World1[3][1] = 0.0f;        World1[3][2] = 0.0f;        World1[3][3] = 1.0f;
-
-	//glm::mat4 World2;
-	////X
-	//World2[0][0] = 1.0f; World2[0][1] = 0.0f;        World2[0][2] = 0.0f;       World2[0][3] = 0.0f;
-	//World2[1][0] = 0.0f;        World2[1][1] = cosf(Scale);	      World2[1][2] = -sinf(Scale);				World2[1][3] = 0.0f;
-	//World2[2][0] = 0.0f; World2[2][1] =sinf(Scale);        World2[2][2] = cosf(Scale);		World2[2][3] = 0.0f;
-	//World2[3][0] = 0.0f;        World2[3][1] = 0.0f;        World2[3][2] = 0.0f;				World2[3][3] = 1.0f;
-
-	//glm::mat4 World=World1*World2;
-
-	////для перемещения треугольника
-	//glm::mat4 World3;
-	//World3[0][0] = 1.0f; World3[0][1] = 0.0f; World3[0][2] = 0.0f; World3[0][3] = sinf(Scale);
-	//World3[1][0] = 0.0f; World3[1][1] = 1.0f; World3[1][2] = 0.0f; World3[1][3] = 0.0f;
-	//World3[2][0] = 0.0f; World3[2][1] = 0.0f; World3[2][2] = 1.0f; World3[2][3] = 0.0f;
-	//World3[3][0] = 0.0f; World3[3][1] = 0.0f; World3[3][2] = 0.0f; World3[3][3] = 1.0f;
-	//
-	//glm::mat4 Worllll = World3 * World;
-
-	//
 	//Преобразования
 	// Создаём pipeline для трансформаций
 	Pipeline p;
-	// Меняем масштаб
-	//p.Scale(0.1f, 0.1f, 0.1f);
-	// Вращаем фигуру
-	p.Rotate(0.0f, Scale, 0.0f);
-	// Устанавливаем положение фигуры
-	p.WorldPos(0.0f, 0.0f, 3.0f);
-	glm::vec3 CameraPos(0.0f, 0.0f, -3.0f);
-	glm::vec3 CameraTarget(0.0f, 0.0f, 2.0f);
-	glm::vec3 CameraUp(0.0f, 1.0f, 0.0f);
-	p.SetCamera(CameraPos, CameraTarget, CameraUp);
-	// Задаём проекцию перспективы
-	p.SetPerspectiveProj(60.0f, WINDOW_WIDTH, WINDOW_HEIGHT, 1.0f, 100.0f);
+
+	p.Scale(cos(Scale * 0.5), sinf(Scale * 0.5), 0.0f);
+	p.WorldPos(sinf(Scale) / 2, cosf(Scale) / 2, 0.0f);
+	p.Rotate(1.0f, 1.0f, 1.0f);
+
+	p.PerspectiveProj(100.0f, WINDOW_WIDTH, WINDOW_HEIGHT, 1.0f, 200.0f);
 	// Загружаем данные в uniform - переменные шейдера(адрес переменной, количество матриц,
 	// передаётся ли матрица по строкам, указатель на первый элемент матрицы)
 	glUniformMatrix4fv(gWorldLocation, 1, GL_TRUE, (const GLfloat*)p.getTransformation());
@@ -127,10 +75,8 @@ static void RenderSceneCB() {
 	// тип данных каждого компонента, нормализировать ли данные перед использованием, шаг - число байтов
 	// между двумя экземплярами атрибута, смещение первого компонента первого универсального атрибута вершины)
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
 	////вызвали функцию для отрисовки (режим рисования, индекс первого элемента в буфере, количество элементов)
-	  glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
-	//glDrawArrays(GL_TRIANGLES, 0, 3);
+	glDrawArrays(GL_TRIANGLES, 0, 3);
 	// Отключение каждого атрибута вершины
 	glDisableVertexAttribArray(0);
 	// Меняем фоновый буфер и буфер кадра местами
@@ -138,26 +84,14 @@ static void RenderSceneCB() {
 }
 static void CreateVertexBuffer()
 {
-	glm::vec3 Vertices[4];
-	Vertices[0] = glm::vec3(-1.0f, -1.0f, 0.5773f);
-	Vertices[1] = glm::vec3(0.0f, -1.0f, -1.15475);
-	Vertices[2] = glm::vec3(1.0f, -1.0f, 0.5773f);
-	Vertices[3] = glm::vec3(0.0f, 1.0f, 0.0f);
+	glm::vec3 Vertices[3];
+	Vertices[0] = glm::vec3(-1.0f, -1.0f, 0.0f);
+	Vertices[1] = glm::vec3(1.0f, -1.0f, 0.0f);
+	Vertices[2] = glm::vec3(0.0f, 1.0f, 0.0f);
 
 	glGenBuffers(1, &VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
-}
-static void CreateIndexBuffer()
-{
-	unsigned int Indices[] = { 0, 3, 1,
-							   1, 3, 2,
-							   2, 3, 0,
-							   0, 2, 1 };
-
-	glGenBuffers(1, &IBO);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Indices), Indices, GL_STATIC_DRAW);
 }
 static void AddShader(GLuint ShaderProgram, const char* pShaderText, GLenum ShaderType)
 {
@@ -189,6 +123,7 @@ static void AddShader(GLuint ShaderProgram, const char* pShaderText, GLenum Shad
 	//мы присоединяем скомпилированный объект шейдера к объекту программы
 	glAttachShader(ShaderProgram, ShaderObj);
 }
+
 static void CompileShaders()
 {
 	//Мы начинаем процесс разработки шейдеров через создание 
