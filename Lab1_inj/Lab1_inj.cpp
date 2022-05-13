@@ -1,16 +1,24 @@
-﻿#include <stdio.h>
+﻿
+#include <stdio.h>
+#include <assert.h>
 #include <GL/glew.h>
 #include <GL/freeglut.h>
-#include "glm/glm.hpp"
-#include "Pipeline.h"
-#include "Pipeline.h"
+#include "glm/vec3.hpp"
+#include "glm/mat4x4.hpp"
+#include "pipeline.h"
+#include "camera.h"
 // Задаём параметры окна
-#define WINDOW_WIDTH 1366
+#define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 768
+
 #define ToRadian(x) ((x) * M_PI / 180.0f)
 #define ToDegree(x) ((x) * 180.0f / M_PI)
 // Хранит указатель на буфер вершин
 GLuint VBO;
+GLuint IBO;
+GLuint gWVPLocation;
+
+Camera GameCamera;
 //Мы используем этот указатель для доступа к всемирной матрице,
 //представленной в виде uniform - переменной внутри шейдера.
 //Всемирная она потому, что всё что мы делаем с объектом, это 
@@ -44,7 +52,6 @@ static void RenderSceneCB() {
 	//очищение окна (используя цвет, заданный выше)
 	glClearColor(0.1f, 0.9f, 0.4f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
-
 	//угол
 	static float Scale = 0.0f;
 	Scale += 0.001f;
@@ -52,13 +59,14 @@ static void RenderSceneCB() {
 
 
 	//Преобразования
-	// Создаём pipeline для трансформаций
+
+
 	Pipeline p;
 
 	p.Scale(cos(Scale * 0.5), sinf(Scale * 0.5), 0.0f);
 	p.WorldPos(sinf(Scale) / 2, cosf(Scale) / 2, 0.0f);
 	p.Rotate(1.0f, 1.0f, 1.0f);
-
+	p.SetCamera(GameCamera.GetPos(), GameCamera.GetTarget(), GameCamera.GetUp());
 	p.PerspectiveProj(100.0f, WINDOW_WIDTH, WINDOW_HEIGHT, 1.0f, 200.0f);
 	// Загружаем данные в uniform - переменные шейдера(адрес переменной, количество матриц,
 	// передаётся ли матрица по строкам, указатель на первый элемент матрицы)
@@ -82,6 +90,11 @@ static void RenderSceneCB() {
 	// Меняем фоновый буфер и буфер кадра местами
 	glutSwapBuffers();
 }
+static void SpecialKeyboardCB(int Key, int x, int y)
+{
+	GameCamera.OnKeyboard(Key);
+}
+
 static void CreateVertexBuffer()
 {
 	glm::vec3 Vertices[3];
@@ -180,6 +193,9 @@ int main(int argc, char** argv)
 	glutDisplayFunc(RenderSceneCB);
 	//Здесь мы указываем функцию рендера в качестве ленивой.
 	glutIdleFunc(RenderSceneCB);
+
+	glutSpecialFunc(SpecialKeyboardCB);
+
 	// Инициализируем glew
 	GLenum res = glewInit();
 	if (res != GLEW_OK) {
